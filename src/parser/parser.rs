@@ -16,7 +16,7 @@ impl<'a> Parser<'a> {
     }
 
     pub fn status(&self) -> Result<(), String> {
-        match self.index >= self.tokens.len() - 1 {
+        match self.index >= self.tokens.len() {
             true => Ok(()),
             _ => Err("Invalid syntax".to_string())
         }
@@ -86,8 +86,8 @@ impl<'a> Parser<'a> {
         let mut result = self.parse_level1()?;
         loop {
             let op = match self.peek() {
-                Ok(Token::Operator("+")) => "+",
-                Ok(Token::Operator("-")) => "-",
+                Ok(Token::Operator(">")) => ">",
+                Ok(Token::Operator("<")) => "<",
                 _ => break
             };
             self.index += 1;
@@ -104,6 +104,28 @@ impl<'a> Parser<'a> {
     }
 
     fn parse_level1(&mut self) -> Result<Node, String> {
+        let save_index = self.index;
+        let mut result = self.parse_level2()?;
+        loop {
+            let op = match self.peek() {
+                Ok(Token::Operator("+")) => "+",
+                Ok(Token::Operator("-")) => "-",
+                _ => break
+            };
+            self.index += 1;
+            let right = match self.parse_level2() {
+                Ok(result) => result,
+                error => {
+                    self.index = save_index;
+                    return error;
+                },
+            };
+            result = Node::Operation(Box::new(result), op.to_string(), Box::new(right));
+        }
+        Ok(result)
+    }
+
+    fn parse_level2(&mut self) -> Result<Node, String> {
         let save_index = self.index;
         let mut result = self.parse_factor()?;
         loop {

@@ -38,6 +38,8 @@ impl Node {
                     "-" => left.minus(&right),
                     "*" => left.mult(&right),
                     "/" => left.div(&right),
+                    ">" => left.gt(&right),
+                    "<" => left.lt(&right),
                     _ => panic!(format!("Operator {} not yet implemented", op))
                 }
             }
@@ -60,6 +62,17 @@ impl Node {
                 env.insert(ident.to_string(), value.clone());
                 value
             }
+        }
+    }
+
+    pub fn type_name(&self) -> &str {
+        match self {
+            Self::Error(_) => "Error",
+            Self::Int(_) => "Integer",
+            Self::Identifier(_) => "Identifier",
+            Self::Operation(_, _, _) => "Operation",
+            Self::If(_, _, _) => "If",
+            Self::Let(_, _) => "Let",
         }
     }
 
@@ -111,6 +124,30 @@ impl Node {
             _ => Self::Error("Cannot multiply a non-integer value".to_string())
         }
     }
+
+    pub fn gt(&self, other: &Self) -> Self {
+        match self {
+            Self::Int(left) => match other {
+                Self::Int(right) => Self::Int((left > right) as i32),
+                Self::Error(message) => Self::Error(message.to_string()),
+                _ => Self::Error("Cannot perform an inequality on a non-integer value".to_string())
+            },
+            Self::Error(message) => Self::Error(message.to_string()),
+            _ => Self::Error("Cannot perform an inequality on a non-integer value".to_string())
+        }
+    }
+
+    pub fn lt(&self, other: &Self) -> Self {
+        match self {
+            Self::Int(left) => match other {
+                Self::Int(right) => Self::Int((left < right) as i32),
+                Self::Error(message) => Self::Error(message.to_string()),
+                _ => Self::Error("Cannot perform an inequality on a non-integer value".to_string())
+            },
+            Self::Error(message) => Self::Error(message.to_string()),
+            _ => Self::Error("Cannot perform an inequality on a non-integer value".to_string())
+        }
+    }
 }
 
 impl fmt::Display for Node {
@@ -118,10 +155,7 @@ impl fmt::Display for Node {
         match self {
             Self::Error(message) => write!(f, "\x1b[31m{}\x1b[0m", message),
             Self::Int(n) => write!(f, "\x1b[32m{}\x1b[0m", n),
-            Self::Identifier(_) => panic!("Cannot display node of type Identifier"),
-            Self::Operation(_, _, _) => panic!("Cannot display node of type Operation"),
-            Self::If(_, _, _) => panic!("Cannot display node of type If"),
-            Self::Let(_, _) => panic!("Cannot display node of type Let"),
+            _ => panic!(format!("Cannot display node of type {}", self.type_name())),
         }
     }
 }

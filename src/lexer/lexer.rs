@@ -50,6 +50,14 @@ impl<'a> Iterator for Lexer<'a> {
                 self.index += 1;
                 Some(Ok(Token::Operator("/")))
             },
+            ">" => {
+                self.index += 1;
+                Some(Ok(Token::Operator(">")))
+            },
+            "<" => {
+                self.index += 1;
+                Some(Ok(Token::Operator("<")))
+            },
             "(" => {
                 self.index += 1;
                 Some(Ok(Token::Paren("(")))
