@@ -6,7 +6,8 @@ pub enum Node {
     Error(String),
     Int(i32),
     Identifier(String),
-    Operation(Box<Node>, String, Box<Node>),
+    BinaryOp(Box<Node>, String, Box<Node>),
+    UnaryOp(String, Box<Node>),
     If(Box<Node>, Box<Node>, Box<Node>),
     Let(String, Box<Node>),
 }
@@ -30,7 +31,7 @@ impl Node {
                     None => Self::Error(format!("Variable '{}' does not exist", ident))
                 }
             },
-            Self::Operation(left, op, right) => {
+            Self::BinaryOp(left, op, right) => {
                 let left = (*left).eval(&mut env);
                 let right = (*right).eval(&mut env);
                 match &op[..] {
@@ -40,7 +41,14 @@ impl Node {
                     "/" => left.div(&right),
                     ">" => left.gt(&right),
                     "<" => left.lt(&right),
-                    _ => panic!(format!("Operator {} not yet implemented", op))
+                    _ => panic!(format!("Binary operator '{}' not yet implemented", op))
+                }
+            },
+            Self::UnaryOp(op, expr) => {
+                let value = (*expr).eval(&mut env);
+                match &op[..] {
+                    "-" => value.negate(),
+                    _ => panic!("Unary operator '{}' not yet implemented")
                 }
             }
             Self::If(case, left, right) => {
@@ -53,7 +61,7 @@ impl Node {
                     Self::Int(_) => (*left).eval(&mut env),
                     _ => Self::Error("Case value cannot be tested in an if statement".to_string())
                 }
-            }
+            },
             Self::Let(ident, expr) => {
                 let value = (*expr).eval(&mut env);
                 if value.is_error() {
@@ -70,7 +78,8 @@ impl Node {
             Self::Error(_) => "Error",
             Self::Int(_) => "Integer",
             Self::Identifier(_) => "Identifier",
-            Self::Operation(_, _, _) => "Operation",
+            Self::BinaryOp(_, _, _) => "BinaryOp",
+            Self::UnaryOp(_, _) => "UnaryOp",
             Self::If(_, _, _) => "If",
             Self::Let(_, _) => "Let",
         }
@@ -97,6 +106,14 @@ impl Node {
             },
             Self::Error(message) => Self::Error(message.to_string()),
             _ => Self::Error("Cannot subtract a non-integer value".to_string())
+        }
+    }
+
+    pub fn negate(&self) -> Self {
+        match self {
+            Self::Int(left) => Self::Int(-left),
+            Self::Error(message) => Self::Error(message.to_string()),
+            _ => Self::Error("Cannot negate a non-integer value".to_string())
         }
     }
 

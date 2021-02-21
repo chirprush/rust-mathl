@@ -98,7 +98,7 @@ impl<'a> Parser<'a> {
                     return error;
                 },
             };
-            result = Node::Operation(Box::new(result), op.to_string(), Box::new(right));
+            result = Node::BinaryOp(Box::new(result), op.to_string(), Box::new(right));
         }
         Ok(result)
     }
@@ -120,7 +120,7 @@ impl<'a> Parser<'a> {
                     return error;
                 },
             };
-            result = Node::Operation(Box::new(result), op.to_string(), Box::new(right));
+            result = Node::BinaryOp(Box::new(result), op.to_string(), Box::new(right));
         }
         Ok(result)
     }
@@ -142,7 +142,7 @@ impl<'a> Parser<'a> {
                     return error;
                 },
             };
-            result = Node::Operation(Box::new(result), op.to_string(), Box::new(right));
+            result = Node::BinaryOp(Box::new(result), op.to_string(), Box::new(right));
         }
         Ok(result)
     }
@@ -151,10 +151,28 @@ impl<'a> Parser<'a> {
         match self.peek()? {
             Token::Paren("(") => self.parse_paren(),
             Token::Keyword("if") => self.parse_if(),
+            Token::Operator("-") => self.parse_unary(),
             Token::Int(_) => self.parse_number(),
             Token::Identifier(_) => self.parse_variable(),
             _ => Err("Failed to parse value".to_string())
         }
+    }
+
+    fn parse_unary(&mut self) -> Result<Node, String> {
+        let save_index = self.index;
+        let op = match self.peek()? {
+            Token::Operator("-") => "-",
+            _ => return Err("Expected a unary operator".to_string())
+        };
+        self.index += 1;
+        let expr = match self.parse_factor() {
+            Ok(expr) => expr,
+            error => {
+                self.index = save_index;
+                return error;
+            }
+        };
+        Ok(Node::UnaryOp(op.to_string(), Box::new(expr)))
     }
 
     fn parse_if(&mut self) -> Result<Node, String> {
